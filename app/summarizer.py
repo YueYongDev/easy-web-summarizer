@@ -1,9 +1,13 @@
 import argparse
+import os
+import sys
 
-from langchain.chains.llm import LLMChain
-from langchain.prompts import PromptTemplate
-from langchain_community.chat_models import ChatOllama
+# Updated imports to use new LangChain modules
+from langchain_core.prompts import PromptTemplate
+from langchain_core.runnables import RunnableSequence
 from langchain_community.document_loaders import WebBaseLoader
+# Fix import for ChatOllama
+from langchain_ollama import ChatOllama
 
 
 def setup_argparse():
@@ -19,6 +23,8 @@ def setup_argparse():
 
 def load_document(url):
     """Load document from the specified URL."""
+    # Set USER_AGENT to avoid warnings
+    os.environ["USER_AGENT"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
     loader = WebBaseLoader(url)
     return loader.load()
 
@@ -26,27 +32,27 @@ def load_document(url):
 def setup_summarization_chain():
     """Setup the summarization chain with a prompt template and ChatOllama."""
     prompt_template = PromptTemplate(
-        template="""As a professional summarizer, create a detailed and comprehensive summary of the provided text, be it an article, post, conversation, or passage, while adhering to these guidelines:
-            1. Craft a summary that is detailed, thorough, in-depth, and complex, while maintaining clarity.
+        template="""作为一名专业的中文摘要员，请创建所提供文本的详细而全面的中文摘要，无论是文章、帖子、对话还是段落，同时遵循以下准则：
+            1. 制作一个详细、透彻、深入且复杂的摘要，同时保持清晰度。
 
-            2. Incorporate main ideas and essential information, eliminating extraneous language and focusing on critical aspects.
+            2. 融入主要观点和基本信息，消除多余的语言，专注于关键方面。
 
-            3. Rely strictly on the provided text, without including external information.
+            3. 严格依赖提供的文本，不包括外部信息。
 
-            4. Format the summary in paragraph form for easy understanding.
+            4. 以段落形式格式化摘要，便于理解。
 
-            5.Conclude your notes with [End of Notes, Message #X] to indicate completion, where "X" represents the total number of messages that I have sent. In other words, include a message counter where you start with #1 and add 1 to the message counter every time I send a message.
-
-        By following this optimized prompt, you will generate an effective summary that encapsulates the essence of the given text in a clear, detailed, and reader-friendly manner. Optimize output as markdown file.
+        通过遵循这个优化的提示，您将生成一个有效的摘要，以清晰、详细且对读者友好的方式封装给定文本的精髓。以markdown文件格式优化输出。
 
         "{text}"
 
-        DETAILED SUMMARY:""",
+        详细中文摘要:""",
         input_variables=["text"],
     )
 
-    llm = ChatOllama(model="llama3:instruct", base_url="http://127.0.0.1:11434")
-    llm_chain = LLMChain(llm=llm, prompt=prompt_template)
+    # Using the updated ChatOllama class
+    llm = ChatOllama(model="gemma3:4b", base_url="http://127.0.0.1:11434")
+    # Using RunnableSequence instead of deprecated LLMChain
+    llm_chain = prompt_template | llm
     return llm_chain
 
 
@@ -55,8 +61,17 @@ def main():
     docs = load_document(args.url)
 
     llm_chain = setup_summarization_chain()
-    result = llm_chain.run(docs)
+    # Using invoke instead of deprecated run method
+    result = llm_chain.invoke({"text": docs[0].page_content})
+    # Print the result to see the output with proper encoding
+    # Ensure proper encoding for Chinese characters
+    if isinstance(result.content, str):
+        print(result.content)
+    else:
+        print(result.content.decode('utf-8'))
 
 
 if __name__ == "__main__":
+    # Ensure UTF-8 encoding for proper Chinese character display
+    sys.stdout.reconfigure(encoding='utf-8')
     main()

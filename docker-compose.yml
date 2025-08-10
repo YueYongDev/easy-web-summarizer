@@ -1,0 +1,14 @@
+services:
+  web-summarizer:
+    image: web-summarizer:local
+    ports:
+      - "8001:8001"
+    environment:
+      OLLAMA_BASE_URL: "http://host.docker.internal:11434"
+      OLLAMA_MODEL: "gemma3:4b"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # Linux 需要；mac/win 可保留无害
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    restart: unless-stopped
