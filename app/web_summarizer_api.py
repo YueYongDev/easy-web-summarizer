@@ -18,6 +18,17 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_ollama import ChatOllama
 from pydantic import BaseModel, Field, ValidationError
 
+import logging
+
+# ========= 日志配置 =========
+logging.basicConfig(
+    level=logging.DEBUG,  # DEBUG 会输出全部日志
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+
+logger = logging.getLogger(__name__)
+
 # 确保终端/日志编码
 os.environ["PYTHONIOENCODING"] = "utf-8"
 
@@ -169,19 +180,26 @@ async def root():
 @app.post("/summarize", response_model=SummaryResponse)
 async def summarize_url(request: URLRequest):
     try:
+        logger.debug(f"收到请求 URL: {request.url}")
+
         article = load_clean_article(request.url)
+        logger.debug(f"抽取正文成功，标题: {article['title']}, 正文字数: {len(article['text'])}")
+
         content_text = clamp_text(f"{article['title']}\n\n{article['text']}")
+        logger.debug(f"裁剪后正文长度: {len(content_text)}")
 
         chain = setup_summarization_chain()
         result = chain.invoke({"content": content_text})
 
-        # 期望 result.content 为纯 JSON；但仍做稳健解析
         raw = result.content
+        logger.debug(f"LLM 原始输出: {raw!r}")
+
         try:
             parsed = parse_json_safely(raw)
             summary, tags = parsed.summary, parsed.tags
-        except (ValidationError, ValueError, json.JSONDecodeError):
-            # 兜底：给出标题+占位
+            logger.debug(f"JSON 解析成功, 摘要长度: {len(summary)}, 标签: {tags}")
+        except (ValidationError, ValueError, json.JSONDecodeError) as e:
+            logger.error(f"JSON 解析失败: {e}")
             summary = (article["title"] or "摘要解析失败").strip()[:100]
             if not summary:
                 summary = "摘要解析失败"
@@ -190,6 +208,7 @@ async def summarize_url(request: URLRequest):
         return SummaryResponse(summary=summary, tags=tags)
 
     except Exception as e:
+        logger.exception(f"summarize_url 异常: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -199,7 +218,7 @@ async def summarize_url(request: URLRequest):
 
 def main():
     parser = argparse.ArgumentParser(description="Run the Web Summarizer API")
-    parser.add_argument("--host", default="127.0.0.1", help="Host to bind to")
+    parser.add_argument("--host", default="0.0.0.0", help="Host to bind to")
     parser.add_argument("--port", type=int, default=8001, help="Port to bind to")  # 兼容你的 curl
     args = parser.parse_args()
 

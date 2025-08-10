@@ -1,6 +1,7 @@
 services:
   web-summarizer:
     image: web-summarizer:local
+    container_name: web-summarizer
     ports:
       - "8001:8001"
     environment:
