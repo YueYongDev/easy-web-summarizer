@@ -20,16 +20,22 @@ pip install -r requirements.txt
 - Translates to Turkish language (other languages will be added soon!)
 - Integration with LangChain and ChatOllama for state-of-the-art summarization.
 - Command-line interface for easy use and integration into workflows.
+- Structured output with summary and tags
 
 ## Usage
 
 To use the webpage summarizer, run the script from the command line, providing the URL of the document you wish to summarize:
 
 ```bash
-python summarizer.py -u "http://example.com/document"
+python app/summarizer.py -u "http://example.com/document"
 ```
 
 Replace `http://example.com/document` with the actual URL of the document you want to summarize.
+
+The output will include:
+- Title of the document
+- A structured summary of 120-220 Chinese characters
+- Tags representing key topics in the document
 
 ### Web UI
 
@@ -48,6 +54,19 @@ docker build -t web-summarizer:local .
 docker compose up -d
 ```
 
+## API Server
+
+The project also includes a FastAPI server for serving summaries via HTTP:
+
+```bash
+python app/web_summarizer_api.py
+```
+
+To use the API:
+
+```bash
+curl -X POST "http://127.0.0.1:8001/summarize" -H "Content-Type: application/json" -d '{"url": "http://example.com/document"}'
+```
 
 ## Development
 
