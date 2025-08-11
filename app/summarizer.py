@@ -32,7 +32,9 @@ def load_clean_article(url: str) -> dict:
     返回: {title, date, text, url}
     """
     # 特殊处理 域名
-    special_domains = ["juejin.cn", "example.com", "another-domain.com"]  # 维护特殊域名列表
+    special_domains = ["juejin.cn", "163.com", "guokr.com", "baidu.com", "smzdm.com", "nmc.cn", "52pojie.cn",
+                       "toutiao.com", "sspai.com", "sina.com.cn", "hupu.com", "51cto.com", "ithome.com",
+                       "news.qq.com", "nodeseek.com", "thepaper.cn", "hellogithub.com", "miyoushe.com"]  # 维护特殊域名列表
     if any(domain in url for domain in special_domains):
         os.environ["USER_AGENT"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
         docs = SeleniumURLLoader([url]).load()
@@ -106,7 +108,7 @@ def setup_summarization_chain():
 
     chat_prompt = ChatPromptTemplate.from_messages([
         ("system", system),
-        ("user", user_template),   # 这里只保留一个 {content} 变量
+        ("user", user_template),  # 这里只保留一个 {content} 变量
     ])
 
     model_name = os.getenv("OLLAMA_MODEL", "gemma3:4b")
@@ -141,7 +143,7 @@ def parse_json_safely(s: str):
 
 def main():
     args = setup_argparse()
-    
+
     try:
         article = load_clean_article(args.url)
         content_text = clamp_text(f"{article['title']}\n\n{article['text']}")
@@ -166,7 +168,7 @@ def main():
         print(f"标题: {article['title']}")
         print(f"摘要: {summary}")
         print(f"标签: {', '.join(tags)}")
-        
+
     except Exception as e:
         print(f"处理过程中出现错误: {str(e)}")
         sys.exit(1)
