@@ -69,9 +69,7 @@ def load_clean_article(url: str) -> dict:
     返回: {title, date, text, url}
     """
     # 特殊处理 域名
-    special_domains = ["juejin.cn", "163.com", "guokr.com", "baidu.com", "smzdm.com", "nmc.cn", "52pojie.cn",
-                       "toutiao.com", "sspai.com", "sina.com.cn", "hupu.com", "51cto.com", "ithome.com",
-                       "news.qq.com", "nodeseek.com", "thepaper.cn", "hellogithub.com"]  # 维护特殊域名列表
+    special_domains = ["juejin.cn", "163.com"]  # 维护特殊域名列表
     if any(domain in url for domain in special_domains):
         os.environ["USER_AGENT"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
         docs = SeleniumURLLoader([url]).load()
