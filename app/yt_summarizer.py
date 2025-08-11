@@ -62,9 +62,9 @@ def yt_summarization_chain():
 
 def summarize_video(video_link):
     transcript = get_transcript(video_link)
+    print(transcript)  # 添加调试信息
     chunks = split_chunks(transcript)
 
     sum_chain = yt_summarization_chain()
     result = sum_chain.run(chunks)
-
     return result

@@ -9,7 +9,7 @@ from typing import List
 import trafilatura
 # Updated imports to use new LangChain modules
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_community.document_loaders import WebBaseLoader
+from langchain_community.document_loaders import WebBaseLoader, SeleniumURLLoader
 # Fix import for ChatOllama
 from langchain_ollama import ChatOllama
 
@@ -27,9 +27,24 @@ def setup_argparse():
 
 def load_clean_article(url: str) -> dict:
     """
-    优先用 trafilatura 抽正文；失败则回落到 WebBaseLoader。
+    优先用 trafilatura 抽正文；失败则回落到 SeleniumURLLoader。
+    对于 juejin.im 等域名的文章，直接使用 SeleniumURLLoader。
     返回: {title, date, text, url}
     """
+    # 特殊处理 域名
+    special_domains = ["juejin.cn", "example.com", "another-domain.com"]  # 维护特殊域名列表
+    if any(domain in url for domain in special_domains):
+        os.environ["USER_AGENT"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        docs = SeleniumURLLoader([url]).load()
+        if not docs:
+            raise ValueError("无法加载页面内容")
+        page = docs[0]
+        title = page.metadata.get("title") or ""
+        text = page.page_content or ""
+        if not text.strip():
+            raise ValueError("页面内容为空")
+        return {"title": title.strip(), "date": "", "text": text.strip(), "url": url}
+
     # 1) trafilatura
     try:
         downloaded = trafilatura.fetch_url(url)
