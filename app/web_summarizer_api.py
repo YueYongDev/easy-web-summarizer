@@ -160,6 +160,7 @@ def setup_summarization_chain(model_name: Optional[str] = None):
         temperature=0,
         format="json",
         num_ctx=8192,
+        reasoning=False
     )
     return chat_prompt | llm
 
